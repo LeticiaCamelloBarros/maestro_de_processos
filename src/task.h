@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#define MAX_TASKS 100
 // Struct 1: representa UMA tarefa cadastrada
 typedef struct {
     char  nome[64];
@@ -15,3 +16,5 @@ typedef struct {
     Task tasks[MAX_TASKS];   // <-- esse campo aqui
     int  num_tasks;
 } TaskRegistry;
+
+void cadastro_de_tarefas (char  *argv[],int argc, TaskRegistry  *registry);

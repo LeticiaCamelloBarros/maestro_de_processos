@@ -2,22 +2,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> 
-#include <task.h>
-void cadastro_de_tarefas (char  **argv[],int argc, TaskRegistry  *registry){
-            // argv[0] = "task", argv[1] = nome, argv[2] = programa, argv[3..] = args
+#include "task.h"
+void cadastro_de_tarefas(char *argv[], int argc, TaskRegistry *registry) {
+    // argv[0] = "task", argv[1] = nome, argv[2] = programa, argv[3..] = args
 
     if (argc < 3) {
         fprintf(stderr, "Uso: task <nome> <programa> [argumentos...]\n");
         return;
     }
+
     if (registry->num_tasks >= MAX_TASKS) {
         fprintf(stderr, "Erro: limite de tarefas cadastradas atingido\n");
         return;
     }
 
     Task *t = &registry->tasks[registry->num_tasks];
+
     strncpy(t->nome, argv[1], sizeof(t->nome) - 1);
+    t->nome[sizeof(t->nome) - 1] = '\0';
+
     strncpy(t->programa, argv[2], sizeof(t->programa) - 1);
+    t->programa[sizeof(t->programa) - 1] = '\0';
 
     // monta o argv que vai pro execvp: argv[2], argv[3], ..., NULL
     int i;

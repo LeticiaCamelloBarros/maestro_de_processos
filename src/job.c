@@ -1,11 +1,28 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-typedef struct job {
-    int id_job; // número fácil de se decorar que facilita na hora de chamar o job 
-    int PID ; //para o SO , um número grande sequencial q ninguém decora . 
-    char nome_task[50]; //torna mais fácil de o usuário identificar o job . 
-    bool running ; //true para running e false para não running 
-    int status ; //valor 'cru' devolvido pelo wait pid 
-}job ; 
+#include <sys/types.h>
+#include <unistd.h>
+#include "job.h"
+#include "task.h"
+#define MAX_JOBS 100
+// Cria um novo job na lista, devolve o job_id gerado
+int cadastrar_job(JobRegistry *registry, pid_t pid, const char *nome_task){
+   
+}
 
+Job* buscar_job(JobRegistry *registry, int job_id){
+
+}
+
+void listar_jobs(JobRegistry *registry){
+
+}
+
+void atualizar_status_job(JobRegistry *registry, pid_t pid, int status){
+
+}
+
+void coletar_todos_jobs(JobRegistry *registry){
+
+}

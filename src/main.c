@@ -4,6 +4,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+//para mexer com essa parte do so 
+#include <sys/types.h>
+#include <unistd.h>
+//importando os arquivos de bibliotecas locais : 
+#include <task.h> 
+#include <job.h> 
+#define qntd_max 100
 int tokenizar(char *linha, char *argv[]) {
     int capacidade = 8;
     char **argv = malloc(sizeof(*argv) * sizeof(char *));
