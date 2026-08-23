@@ -6,6 +6,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #define MAX_JOBS 100
+//para evitar que inclua o conteúdo do header 2x 
+#ifndef JOB_H
+#define JOB_H
 typedef enum {
     JOB_RUNNING , 
     JOB_DONE  ,
@@ -15,7 +18,6 @@ typedef struct job {
     int job_id; // número fácil de se decorar que facilita na hora de chamar o job 
     pid_t PID ; //para o SO , um número grande sequencial q ninguém decora tirado da biblioteca unistd ou da sys/types( uma das duas)
     char nome_task[50]; //torna mais fácil de o usuário identificar o job . 
-    bool running ; //true para running e false para não running 
     Jobstate state ;// resultado da tradução do status para o entendimento humano através de funções especiais 
     int status ;  //valor 'cru' devolvido pelo wait pid 
 }Job ; 
@@ -40,3 +42,5 @@ void atualizar_status_job(JobRegistry *registry, pid_t pid, int status);
 
 // Espera todos os jobs pendentes terminarem (usado no 'exit', pra não deixar zumbi)
 void coletar_todos_jobs(JobRegistry *registry);
+
+#endif
