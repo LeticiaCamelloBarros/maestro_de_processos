@@ -3,6 +3,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #define MAX_TASKS 100
+extern TaskRegistry registry;
+extern char diretorio_atual[256];
+
 // Struct 1: representa UMA tarefa cadastrada
 typedef struct {
     char  nome[64];

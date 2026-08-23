@@ -10,6 +10,9 @@
 //importando os arquivos de bibliotecas locais : 
 #include <task.h> 
 #include <job.h> 
+//vars globais
+TaskRegistry registry = {0};
+char diretorio_atual[256] = ".";
 #define qntd_max 100
 int tokenizar(char *linha, char *argv[]) {
     int capacidade = 8;
