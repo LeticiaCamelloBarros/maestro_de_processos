@@ -4,7 +4,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "task.h"
-#include "acoesprocess.h"
 #include <string.h>
 //para evitar que inclua o conteúdo do header 2x 
 #ifndef ACOESPROCESS_H
