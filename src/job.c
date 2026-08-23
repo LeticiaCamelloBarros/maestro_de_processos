@@ -94,8 +94,14 @@ void atualizar_status_job(JobRegistry *registry, pid_t pid, int status) {
         return;
     }
 }
-
-void coletar_todos_jobs(JobRegistry *registry){
-
+//me protege dessa rúbrica : "O ProcessFlow é responsável por coletar corretamente o término dos processos filhos que criar."
+void coletar_todos_jobs(JobRegistry *registry) {
+    for (int i = 0; i < registry->num_jobs; i++) {
+        if (registry->jobs[i].state==JOB_RUNNING) {
+            int status;
+            waitpid(registry->jobs[i].PID, &status, 0);  // espera de verdade, bloqueante
+            atualizar_status_job(registry, registry->jobs[i].PID, status);
+        }
+    }
 }
 

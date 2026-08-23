@@ -57,5 +57,12 @@ int main(int argc, char *argv[]) {
         executar(meu_argc, meu_argv);
     }
     free(meu_argv);  // - libera a CADA iteração, antes de ler a próxima linha
+
+    //no final lembrar de : 
+    // else if (strcmp(token, "exit") == 0) {
+    // coletar_todos_jobs(&jobs);  // garante que nenhum processo em background fique zumbi
+    // printf("Encerrando ProcessFlow...\n");
+    // exit(0);
+}
     return 0;
 }
