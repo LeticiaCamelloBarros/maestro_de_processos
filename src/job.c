@@ -7,8 +7,21 @@
 #include "task.h"
 #define MAX_JOBS 100
 // Cria um novo job na lista, devolve o job_id gerado
-int cadastrar_job(JobRegistry *registry, pid_t pid, const char *nome_task){
-   
+int cadastrar_job(JobRegistry *registry, pid_t pid, const char *nome_task) {
+    if (registry->num_jobs >= MAX_JOBS) {
+        fprintf(stderr, "Erro: limite de jobs atingido\n");
+        return -1;  // caminho de erro: retorna -1
+    }
+
+    Job *j = &registry->jobs[registry->num_jobs];
+    j->job_id = registry->next_job_id++;
+    j->PID = pid;
+    strncpy(j->nome_task, nome_task, sizeof(j->nome_task) - 1);
+    j->nome_task[sizeof(j->nome_task) - 1] = '\0';
+    j->status = JOB_RUNNING;
+    registry->num_jobs++;
+
+    return j->job_id;  // caminho de sucesso: retorna o id criado — ESSENCIAL, não pode faltar
 }
 
 Job* buscar_job(JobRegistry *registry, int job_id){

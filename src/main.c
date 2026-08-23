@@ -8,8 +8,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 //importando os arquivos de bibliotecas locais : 
-#include <task.h> 
-#include <job.h> 
+#include "task.h" 
+#include "job.h"
+#include "acoesprocess.h" 
 //vars globais
 TaskRegistry registry = {0};
 char diretorio_atual[256] = ".";

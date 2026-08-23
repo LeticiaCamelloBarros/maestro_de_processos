@@ -10,7 +10,8 @@
 #include <errno.h>
  // open, O_RDONLY, O_WRONLY, O_CREAT, O_APPEND, O_TRUNC
 #include <fcntl.h>
-void cadastrar_task(char *argv[], int argc, TaskRegistry *registry) {
+
+void cadastrar_task(char *argv[], int argc, TaskRegistry *reg) {
     // argv[0] = "task", argv[1] = nome, argv[2] = programa, argv[3..] = args
 
     if (argc < 3) {
@@ -18,12 +19,12 @@ void cadastrar_task(char *argv[], int argc, TaskRegistry *registry) {
         return;
     }
 
-    if (registry->num_tasks >= MAX_TASKS) {
+    if (reg->num_tasks >= MAX_TASKS) {
         fprintf(stderr, "Erro: você chegou ao limite no cadastro de tarefas\n");
         return;
     }
 
-    Task *t = &registry->tasks[registry->num_tasks];
+    Task *t = &reg->tasks[reg->num_tasks];
 
     strncpy(t->nome, argv[1], sizeof(t->nome) - 1);
     t->nome[sizeof(t->nome) - 1] = '\0';
@@ -42,7 +43,7 @@ void cadastrar_task(char *argv[], int argc, TaskRegistry *registry) {
     t->output_file = NULL;
     t->append_mode = 0;
 
-    registry->num_tasks++;
+    reg->num_tasks++;
 }
 
 
@@ -125,7 +126,7 @@ Task *buscar_task(TaskRegistry *pTask,char  *nome){
         }
     }
     if (found){
-        printf("task não  encontrada");
+        printf("task  encontrada");
         return &pTask->tasks[indice];
     }
     else{
