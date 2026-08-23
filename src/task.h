@@ -23,7 +23,7 @@ typedef struct {
     int  num_tasks;
 } TaskRegistry;
 
-void cadastrar_task (char  *argv[],int argc, TaskRegistry  *registry);
+void cadastrar_task (char  *argv[],int argc, TaskRegistry  *registry)
 
 pid_t executar_task(Task *t, int fd_entrada, int fd_saida);
 

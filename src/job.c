@@ -34,8 +34,22 @@ if (found==false){
 
 
 
-void listar_jobs(JobRegistry *registry){
-   
+void listar_jobs(JobRegistry *registry) {
+    for (int i = 0; i < registry->num_jobs; i++) {
+        Job *j = &registry->jobs[i];
+        printf("[%d]  ", j->job_id);
+        switch (j->state) {
+            case JOB_RUNNING:
+                printf("Running    %s\n", j->nome_task);
+                break;
+            case JOB_DONE:
+                printf("Done       %s (exit %d)\n", j->nome_task, WEXITSTATUS(j->status));
+                break;
+            case JOB_SIGNALED:
+                printf("Signaled   %s (signal %d)\n", j->nome_task, WTERMSIG(j->status));
+                break;
+        }
+    }
 }
 
 void atualizar_status_job(JobRegistry *registry, pid_t pid, int status){

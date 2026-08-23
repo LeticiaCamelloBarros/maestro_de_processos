@@ -22,3 +22,4 @@ void cmd_run_sequential(char *nomes[], int n) {
         }
     }
 }
+void cmd_run_parallel(char *nomes[],int n);
