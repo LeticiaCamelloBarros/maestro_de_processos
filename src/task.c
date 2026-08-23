@@ -1,3 +1,4 @@
+//implementação das funções de task TERMINADA
 #define MAX_TASKS 100
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +11,6 @@
 #include <errno.h>
  // open, O_RDONLY, O_WRONLY, O_CREAT, O_APPEND, O_TRUNC
 #include <fcntl.h>
-
 void cadastrar_task(char *argv[], int argc, TaskRegistry *reg) {
     // argv[0] = "task", argv[1] = nome, argv[2] = programa, argv[3..] = args
 

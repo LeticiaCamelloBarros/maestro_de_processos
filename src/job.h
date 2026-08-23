@@ -19,7 +19,7 @@ typedef struct job {
     pid_t PID ; //para o SO , um número grande sequencial q ninguém decora tirado da biblioteca unistd ou da sys/types( uma das duas)
     char nome_task[50]; //torna mais fácil de o usuário identificar o job . 
     Jobstate state ;// resultado da tradução do status para o entendimento humano através de funções especiais 
-    int status ;  //valor 'cru' devolvido pelo wait pid 
+    int status ;  //valor 'cru' devolvido pelo waitpid 
 }Job ; 
 typedef struct {
     Job jobs[MAX_JOBS];

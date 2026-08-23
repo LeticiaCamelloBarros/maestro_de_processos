@@ -65,8 +65,34 @@ void listar_jobs(JobRegistry *registry) {
     }
 }
 
-void atualizar_status_job(JobRegistry *registry, pid_t pid, int status){
+void atualizar_status_job(JobRegistry *registry, pid_t pid, int status) {
+    // 1. encontra o job correspondente a esse PID
+    Job *j = NULL;
+    for (int i = 0; i < registry->num_jobs; i++) {
+        if (registry->jobs[i].PID == pid) {
+            j = &registry->jobs[i];
+            break;
+        }
+    }
 
+    // 2. se não achou (situação anômala, mas defensiva), não faz nada
+    if (j == NULL) {
+        return;
+    }
+
+    // 3. guarda o valor cru, sempre — útil pra debug e pra WEXITSTATUS depois
+    j->status = status;
+
+    //se protege contra essa rúbrica : "Processos que terminam com código de saída diferente de zero" (situação a tratar de forma coerente)
+    if (WIFEXITED(status)) {
+        j->state = JOB_DONE;
+    } else if (WIFSIGNALED(status)) {
+        j->state = JOB_SIGNALED;
+    } else {
+        // WIFSTOPPED ou outro caso raro (processo pausado, não terminado de verdade)
+        // não muda running nem state, porque o job ainda não acabou de fato
+        return;
+    }
 }
 
 void coletar_todos_jobs(JobRegistry *registry){
