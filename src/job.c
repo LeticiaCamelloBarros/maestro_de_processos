@@ -1,3 +1,4 @@
+//criado o escopo de todas as funções com job
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -7,30 +8,30 @@
 #include "task.h"
 #define MAX_JOBS 100
 // Cria um novo job na lista, devolve o job_id gerado
-int cadastrar_job(JobRegistry *registry, pid_t pid, const char *nome_task) {
-    if (registry->num_jobs >= MAX_JOBS) {
+int cadastrar_job(JobRegistry *jreg, pid_t pid, const char *nome_task) {
+    if (jreg->num_jobs >= MAX_JOBS) {
         fprintf(stderr, "Erro: limite de jobs atingido\n");
         return -1;  // caminho de erro: retorna -1
     }
 
-    Job *j = &registry->jobs[registry->num_jobs];
-    j->job_id = registry->next_job_id++;
+    Job *j = &jreg->jobs[jreg->num_jobs];
+    j->job_id = jreg->next_job_id++;
     j->PID = pid;
     strncpy(j->nome_task, nome_task, sizeof(j->nome_task) - 1);
     j->nome_task[sizeof(j->nome_task) - 1] = '\0';
     j->status = JOB_RUNNING;
-    registry->num_jobs++;
+    jreg->num_jobs++;
 
     return j->job_id;  // caminho de sucesso: retorna o id criado — ESSENCIAL, não pode faltar
 }
 
-Job* buscar_job(JobRegistry *registry, int job_id){
+Job* buscar_job(JobRegistry *jreg, int job_id){
     bool found = false;
     int indice ;
-for(int i =0;i<(registry->num_jobs);i++){
+for(int i =0;i<(jreg->num_jobs);i++){
 //    Job jobs[MAX_JOBS];
 
-if((registry->jobs[i].job_id)==job_id) {
+if((jreg->jobs[i].job_id)==job_id) {
   found = true ;
   indice = i ; 
   break;
@@ -41,15 +42,15 @@ if (found==false){
     return NULL;
 }else {
     printf("job encontrado ");
-    return &registry->jobs[indice];
+    return &jreg->jobs[indice];
 }
 }
 
 
 
-void listar_jobs(JobRegistry *registry) {
-    for (int i = 0; i < registry->num_jobs; i++) {
-        Job *j = &registry->jobs[i];
+void listar_jobs(JobRegistry *jreg) {
+    for (int i = 0; i < jreg->num_jobs; i++) {
+        Job *j = &jreg->jobs[i];
         printf("[%d]  ", j->job_id);
         switch (j->state) {
             case JOB_RUNNING:
@@ -65,12 +66,12 @@ void listar_jobs(JobRegistry *registry) {
     }
 }
 
-void atualizar_status_job(JobRegistry *registry, pid_t pid, int status) {
+void atualizar_status_job(JobRegistry *jreg, pid_t pid, int status) {
     // 1. encontra o job correspondente a esse PID
     Job *j = NULL;
-    for (int i = 0; i < registry->num_jobs; i++) {
-        if (registry->jobs[i].PID == pid) {
-            j = &registry->jobs[i];
+    for (int i = 0; i < jreg->num_jobs; i++) {
+        if (jreg->jobs[i].PID == pid) {
+            j = &jreg->jobs[i];
             break;
         }
     }
@@ -95,12 +96,12 @@ void atualizar_status_job(JobRegistry *registry, pid_t pid, int status) {
     }
 }
 //me protege dessa rúbrica : "O ProcessFlow é responsável por coletar corretamente o término dos processos filhos que criar."
-void coletar_todos_jobs(JobRegistry *registry) {
-    for (int i = 0; i < registry->num_jobs; i++) {
-        if (registry->jobs[i].state==JOB_RUNNING) {
+void coletar_todos_jobs(JobRegistry *jreg) {
+    for (int i = 0; i < jreg->num_jobs; i++) {
+        if (jreg->jobs[i].state==JOB_RUNNING) {
             int status;
-            waitpid(registry->jobs[i].PID, &status, 0);  // espera de verdade, bloqueante
-            atualizar_status_job(registry, registry->jobs[i].PID, status);
+            waitpid(jreg->jobs[i].PID, &status, 0);  // espera de verdade, bloqueante
+            atualizar_status_job(jreg, jreg->jobs[i].PID, status);
         }
     }
 }

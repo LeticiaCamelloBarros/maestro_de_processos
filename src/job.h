@@ -29,18 +29,18 @@ typedef struct {
 // job.h — assinaturas
 
 // Cria um novo job na lista, devolve o job_id gerado
-int cadastrar_job(JobRegistry *registry, pid_t pid, const char *nome_task);
+int cadastrar_job(JobRegistry *jreg, pid_t pid, const char *nome_task);
 
 // Procura um job pelo id (usado por 'wait <jobId>')
-Job* buscar_job(JobRegistry *registry, int job_id);
+Job* buscar_job(JobRegistry *jreg, int job_id);
 
 // Imprime todos os jobs (comando 'jobs')
-void listar_jobs(JobRegistry *registry);
+void listar_jobs(JobRegistry *jreg);
 
 // Atualiza o status de um job específico depois que ele termina
-void atualizar_status_job(JobRegistry *registry, pid_t pid, int status);
+void atualizar_status_job(JobRegistry *jreg, pid_t pid, int status);
 
 // Espera todos os jobs pendentes terminarem (usado no 'exit', pra não deixar zumbi)
-void coletar_todos_jobs(JobRegistry *registry);
+void coletar_todos_jobs(JobRegistry *jreg);
 
 #endif
