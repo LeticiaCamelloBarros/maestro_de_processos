@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <string.h> 
 #include "task.h"
-void cadastro_de_tarefas(char *argv[], int argc, TaskRegistry *registry) {
+#include <stdbool.h>
+#include <string.h>
+void cadastrar_task(char *argv[], int argc, TaskRegistry *registry) {
     // argv[0] = "task", argv[1] = nome, argv[2] = programa, argv[3..] = args
 
     if (argc < 3) {
@@ -36,4 +38,29 @@ void cadastro_de_tarefas(char *argv[], int argc, TaskRegistry *registry) {
     t->append_mode = 0;
 
     registry->num_tasks++;
+}
+
+
+pid_t executar_task(Task *t, int fd_entrada, int fd_saida){
+
+}
+
+Task *buscar_task(TaskRegistry *pTask,char  *nome){
+    bool found = false ;
+    int indice = 0 ; 
+    for(int i=0;i<pTask->num_tasks;i++){
+        if (strcmp(pTask->tasks[i].nome, nome) == 0){
+            found = true ; 
+            indice = i ; 
+            break ;//pode parar aqui já achou//
+        }
+    }
+    if (found){
+        printf("task não  encontrada");
+        return &pTask->tasks[indice];
+    }
+    else{
+        printf("task não encontrada");
+        return NULL;
+    }
 }
