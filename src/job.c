@@ -39,10 +39,8 @@ if((jreg->jobs[i].job_id)==job_id) {
 }
 }
 if (found==false){
-    printf("job não encontrado ");
     return NULL;
 }else {
-    printf("job encontrado ");
     return &jreg->jobs[indice];
 }
 }
@@ -68,7 +66,7 @@ void listar_jobs(JobRegistry *jreg) {
 }
 
 void atualizar_status_job(JobRegistry *jreg, pid_t pid, int status) {
-    // 1. encontra o job correspondente a esse PID
+    //encontra o job correspondente a esse PID
     Job *j = NULL;
     for (int i = 0; i < jreg->num_jobs; i++) {
         if (jreg->jobs[i].PID == pid) {
@@ -77,12 +75,12 @@ void atualizar_status_job(JobRegistry *jreg, pid_t pid, int status) {
         }
     }
 
-    // 2. se não achou (situação anômala, mas defensiva), não faz nada
+    //se não achou (situação anômala, mas defensiva), não faz nada
     if (j == NULL) {
         return;
     }
 
-    // 3. guarda o valor cru, sempre — útil pra debug e pra WEXITSTATUS depois
+    // guarda o valor cru, sempre — útil pra debug e pra WEXITSTATUS depois
     j->status = status;
 
     //se protege contra essa rúbrica : "Processos que terminam com código de saída diferente de zero" (situação a tratar de forma coerente)
@@ -96,7 +94,8 @@ void atualizar_status_job(JobRegistry *jreg, pid_t pid, int status) {
         return;
     }
 }
-//me protege dessa rúbrica : "O ProcessFlow é responsável por coletar corretamente o término dos processos filhos que criar."
+//me protege da rúbrica : "O ProcessFlow é responsável por coletar corretamente o término dos processos filhos que criar."
+//previne zumbis : 
 void coletar_todos_jobs(JobRegistry *jreg) {
     for (int i = 0; i < jreg->num_jobs; i++) {
         if (jreg->jobs[i].state==JOB_RUNNING) {
