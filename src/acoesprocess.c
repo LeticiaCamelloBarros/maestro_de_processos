@@ -142,4 +142,113 @@ void cmd_run_parallel(char *nomes_tasks[], int n, TaskRegistry *reg) {
         }
     }
 }
+ void cmd_run_pipe(char *nomes[], int n, TaskRegistry *reg) {
+    if (n < 2) {
+        fprintf(stderr, "Erro: pipe requer pelo menos 2 tarefas\n");
+        return;
+    }
+    if (n - 1 > MAX_PIPE) {
+        fprintf(stderr, "Erro: pipe com muitas tarefas (máximo %d)\n", MAX_PIPE + 1);
+        return;
+    }
+ 
+    int pipes[MAX_PIPE][2];
+    for (int i = 0; i < n - 1; i++) {
+        if (pipe(pipes[i]) < 0) {
+            perror("pipe");
+            // fecha o que já foi aberto antes de desistir
+            for (int j = 0; j < i; j++) { close(pipes[j][0]); close(pipes[j][1]); }
+            return;
+        }
+    }
+ 
+    pid_t pids[MAX_PIPE + 1];
+ 
+    for (int i = 0; i < n; i++) {
+        Task *t = buscar_task(reg, nomes[i]);
+        if (t == NULL) {
+            fprintf(stderr, "Erro: tarefa '%s' não encontrada\n", nomes[i]);
+            pids[i] = -1;
+            continue;
+        }
+ 
+        pid_t pid = fork();
+        if (pid < 0) {
+            perror("fork");
+            pids[i] = -1;
+            continue;
+        }
+ 
+        if (pid == 0) {
+            // ---- processo filho ----
+            if (chdir(diretorio_atual) != 0) {
+                fprintf(stderr, "Erro: diretório '%s' não encontrado\n", diretorio_atual);
+                _exit(1);
+            }
+ 
+            // entrada: vem do pipe anterior, ou do input_file da própria task (se for a 1ª)
+            if (i > 0) {
+                dup2(pipes[i - 1][0], STDIN_FILENO);
+            } else if (t->input_file != NULL) {
+                int fd_in = open(t->input_file, O_RDONLY);
+                if (fd_in < 0) {
+                    fprintf(stderr, "Erro: não foi possível abrir '%s': %s\n",
+                            t->input_file, strerror(errno));
+                    _exit(1);
+                }
+                dup2(fd_in, STDIN_FILENO);
+                close(fd_in);
+            }
+ 
+            // saída: vai pro próximo pipe, ou pro output_file da própria task (se for a última)
+            if (i < n - 1) {
+                dup2(pipes[i][1], STDOUT_FILENO);
+            } else if (t->output_file != NULL) {
+                int flags = O_WRONLY | O_CREAT | (t->append_mode ? O_APPEND : O_TRUNC);
+                int fd_out = open(t->output_file, flags, 0644);
+                if (fd_out < 0) {
+                    fprintf(stderr, "Erro: não foi possível abrir '%s': %s\n",
+                            t->output_file, strerror(errno));
+                    _exit(1);
+                }
+                dup2(fd_out, STDOUT_FILENO);
+                close(fd_out);
+            }
+ 
+            // fecha TODOS os fds de pipe no filho (já duplicados no que precisava)
+            for (int j = 0; j < n - 1; j++) {
+                close(pipes[j][0]);
+                close(pipes[j][1]);
+            }
+ 
+            execvp(t->programa, t->argv);
+            fprintf(stderr, "Erro: não foi possível executar '%s': %s\n",
+                    t->programa, strerror(errno));
+            _exit(127);
+        }
+ 
+        pids[i] = pid;
+    }
+ 
+    // ---- processo pai: fecha todos os fds de pipe ----
+    for (int i = 0; i < n - 1; i++) {
+        close(pipes[i][0]);
+        close(pipes[i][1]);
+    }
+ 
+    // espera todo mundo
+    for (int i = 0; i < n; i++) {
+        if (pids[i] > 0) {
+            int status;
+            waitpid(pids[i], &status, 0);
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+                fprintf(stderr, "Aviso: '%s' terminou com código %d\n",
+                        nomes[i], WEXITSTATUS(status));
+            } else if (WIFSIGNALED(status)) {
+                fprintf(stderr, "Aviso: '%s' foi morto pelo sinal %d\n",
+                        nomes[i], WTERMSIG(status));
+            }
+        }
+    }
+}
  
