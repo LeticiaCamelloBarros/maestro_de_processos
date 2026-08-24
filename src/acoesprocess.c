@@ -88,45 +88,48 @@ void cmd_run_sequential(char *nomes[], int n) {
         }
     }
 }
-
 void cmd_run_parallel(char *nomes_tasks[], int n, TaskRegistry *reg) {
-
     ProcessoLancado lancados[MAX_PARALLEL];
     int total_lancados = 0;
-
-    // FASE 1: lança TODOS os processos primeiro, sem esperar nenhum
+ 
+   //lança TODOS os processos primeiro, sem esperar nenhum
     for (int i = 0; i < n; i++) {
         Task *t = buscar_task(reg, nomes_tasks[i]);
-
+ 
         if (t == NULL) {
             fprintf(stderr, "Erro: tarefa '%s' não existe\n", nomes_tasks[i]);
             continue;  // pula essa, mas NÃO aborta as outras
         }
-
+ 
         pid_t pid = fork();
-
+ 
         if (pid < 0) {
             perror("fork");
             continue;
         }
-
+ 
         if (pid == 0) {
             // processo filho
-            aplicar_redirecionamentos(t);   // dup2 de input/output/append, se houver
+            if (chdir(diretorio_atual) != 0) {
+                fprintf(stderr, "Erro: diretório '%s' não encontrado\n", diretorio_atual);
+                _exit(1);
+            }
+            aplicar_redirecionamentos(t);
             execvp(t->programa, t->argv);
-            // só chega aqui se execvp falhou
-            fprintf(stderr, "Erro: não foi possível executar '%s'\n", t->programa);
+            fprintf(stderr, "Erro: não foi possível executar '%s': %s\n",
+                    t->programa, strerror(errno));
             _exit(127);
         }
-
+ 
         // processo pai: guarda o pid, NÃO espera ainda
         lancados[total_lancados].pid = pid;
         strncpy(lancados[total_lancados].nome_task, t->nome, 63);
+        lancados[total_lancados].nome_task[63] = '\0';
         lancados[total_lancados].valido = 1;
         total_lancados++;
     }
-
-    // FASE 2: só agora espera todos, um por um
+ 
+    // só agora espera todos, um por um
     for (int i = 0; i < total_lancados; i++) {
         int status;
         waitpid(lancados[i].pid, &status, 0);
@@ -139,3 +142,4 @@ void cmd_run_parallel(char *nomes_tasks[], int n, TaskRegistry *reg) {
         }
     }
 }
+ 
