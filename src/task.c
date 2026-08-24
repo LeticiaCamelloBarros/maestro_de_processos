@@ -1,4 +1,4 @@
-//implementação das funções de task TERMINADA
+#define _POSIX_C_SOURCE 200809L
 #define MAX_TASKS 100
 #include <stdio.h>
 #include <stdlib.h>
@@ -108,7 +108,7 @@ pid_t executar_task(Task *task, int fd_entrada, int fd_saida, char *workdir) {
         exit(127);
     }
 
-    // ---- PROCESSO PAI ----
+    //  PROCESSO PAI 
     if (fd_entrada != -1) close(fd_entrada);
     if (fd_saida != -1) close(fd_saida);
 
@@ -122,7 +122,7 @@ Task *buscar_task(TaskRegistry *pTask,char  *nome){
         if (strcmp(pTask->tasks[i].nome, nome) == 0){
             found = true ; 
             indice = i ; 
-            break ;//pode parar aqui já achou//
+            break ;
         }
     }
     if (found){
