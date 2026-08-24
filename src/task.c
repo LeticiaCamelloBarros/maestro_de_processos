@@ -126,11 +126,9 @@ Task *buscar_task(TaskRegistry *pTask,char  *nome){
         }
     }
     if (found){
-        printf("task  encontrada");
         return &pTask->tasks[indice];
     }
     else{
-        printf("task não encontrada");
         return NULL;
     }
 }
