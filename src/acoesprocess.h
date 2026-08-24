@@ -1,13 +1,11 @@
 #ifndef ACOESPROCESS_H
 #define ACOESPROCESS_H
 //ifndef tem que ficar no topo //para evitar que inclua o conteúdo do header 2x 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "task.h"
 #include <string.h>
 #include "job.h"
 //movendo para cá já que é usada em main.c e em acoesprocess.c e assim evitando duplicação de loop

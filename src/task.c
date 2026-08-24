@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
+
  // open, O_RDONLY, O_WRONLY, O_CREAT, O_APPEND, O_TRUNC
 #include <fcntl.h>
 void cadastrar_task(char *argv[], int argc, TaskRegistry *reg) {

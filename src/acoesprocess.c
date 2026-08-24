@@ -142,7 +142,7 @@ void cmd_run_parallel(char *nomes_tasks[], int n, TaskRegistry *reg) {
         }
     }
 }
- void cmd_run_pipe(char *nomes[], int n, TaskRegistry *reg) {
+void cmd_run_pipe(char *nomes[], int n, TaskRegistry *reg) {
     if (n < 2) {
         fprintf(stderr, "Erro: pipe requer pelo menos 2 tarefas\n");
         return;
@@ -251,7 +251,7 @@ void cmd_run_parallel(char *nomes_tasks[], int n, TaskRegistry *reg) {
         }
     }
 }
- void cmd_input(TaskRegistry *reg, char *nome_task, char *arquivo) {
+void cmd_input(TaskRegistry *reg, char *nome_task, char *arquivo) {
     Task *t = buscar_task(reg, nome_task);
     if (t == NULL) {
         fprintf(stderr, "Erro: tarefa '%s' não encontrada\n", nome_task);
@@ -259,7 +259,6 @@ void cmd_run_parallel(char *nomes_tasks[], int n, TaskRegistry *reg) {
     }
     t->input_file = strdup(arquivo);
 }
- 
 void cmd_output(TaskRegistry *reg, char *nome_task, char *arquivo) {
     Task *t = buscar_task(reg, nome_task);
     if (t == NULL) {
@@ -269,7 +268,6 @@ void cmd_output(TaskRegistry *reg, char *nome_task, char *arquivo) {
     t->output_file = strdup(arquivo);
     t->append_mode = 0;
 }
- 
 void cmd_append(TaskRegistry *reg, char *nome_task, char *arquivo) {
     Task *t = buscar_task(reg, nome_task);
     if (t == NULL) {
@@ -279,7 +277,6 @@ void cmd_append(TaskRegistry *reg, char *nome_task, char *arquivo) {
     t->output_file = strdup(arquivo);
     t->append_mode = 1;
 }
-
 void cmd_workdir(char *dir) {
     struct stat st;
     if (stat(dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
@@ -289,7 +286,6 @@ void cmd_workdir(char *dir) {
     strncpy(diretorio_atual, dir, 255);
     diretorio_atual[255] = '\0';
 }
- 
 void cmd_start(TaskRegistry *reg, JobRegistry *jreg, char *nome_task) {
     Task *t = buscar_task(reg, nome_task);
     if (t == NULL) {
@@ -305,4 +301,68 @@ void cmd_start(TaskRegistry *reg, JobRegistry *jreg, char *nome_task) {
         printf("[%d] %d\n", job_id, pid);
     }
 }
+int processar_comando(int argc, char *argv[], TaskRegistry *reg, JobRegistry *jreg) {
+    if (argc == 0) {
+        return 0;  // linha vazia, já filtrada antes de chegar aqui, mas por segurança
+    }
  
+    if (strcmp(argv[0], "exit") == 0) {
+        return 1;
+    }
+ 
+    if (strcmp(argv[0], "task") == 0) {
+        cadastrar_task(argv, argc, reg);
+    }
+    else if (strcmp(argv[0], "run") == 0) {
+        if (argc < 3) {
+            fprintf(stderr, "Uso: run <sequential|parallel|pipe> <tarefas...>\n");
+            return 0;
+        }
+        char **nomes = &argv[2];
+        int n = argc - 2;
+ 
+        if (strcmp(argv[1], "sequential") == 0) {
+            cmd_run_sequential(nomes, n);
+        } else if (strcmp(argv[1], "parallel") == 0) {
+            cmd_run_parallel(nomes, n, reg);
+        } else if (strcmp(argv[1], "pipe") == 0) {
+            cmd_run_pipe(nomes, n, reg);
+        } else {
+            fprintf(stderr, "Erro: modo de execução '%s' desconhecido (use sequential, parallel ou pipe)\n", argv[1]);
+        }
+    }
+    else if (strcmp(argv[0], "input") == 0) {
+        if (argc != 3) { fprintf(stderr, "Uso: input <tarefa> <arquivo>\n"); return 0; }
+        cmd_input(reg, argv[1], argv[2]);
+    }
+    else if (strcmp(argv[0], "output") == 0) {
+        if (argc != 3) { fprintf(stderr, "Uso: output <tarefa> <arquivo>\n"); return 0; }
+        cmd_output(reg, argv[1], argv[2]);
+    }
+    else if (strcmp(argv[0], "append") == 0) {
+        if (argc != 3) { fprintf(stderr, "Uso: append <tarefa> <arquivo>\n"); return 0; }
+        cmd_append(reg, argv[1], argv[2]);
+    }
+    else if (strcmp(argv[0], "workdir") == 0) {
+        if (argc != 2) { fprintf(stderr, "Uso: workdir <diretorio>\n"); return 0; }
+        cmd_workdir(argv[1]);
+    }
+    else if (strcmp(argv[0], "start") == 0) {
+        if (argc != 2) { fprintf(stderr, "Uso: start <tarefa>\n"); return 0; }
+        cmd_start(reg, jreg, argv[1]);
+    }
+    else if (strcmp(argv[0], "jobs") == 0) {
+        listar_jobs(jreg);
+    }
+    else if (strcmp(argv[0], "wait") == 0) {
+        if (argc != 2) { fprintf(stderr, "Uso: wait <jobId>\n"); return 0; }
+        int job_id = atoi(argv[1]);
+        esperar_job(jreg, job_id);
+    }
+    else {
+        fprintf(stderr, "Erro: comando '%s' não reconhecido\n", argv[0]);
+    }
+ 
+    return 0;
+}
+
