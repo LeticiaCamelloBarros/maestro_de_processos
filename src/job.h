@@ -46,4 +46,6 @@ void atualizar_status_job(JobRegistry *jreg, pid_t pid, int status);
 // Espera todos os jobs pendentes terminarem (usado no 'exit', pra não deixar zumbi)
 void coletar_todos_jobs(JobRegistry *jreg);
 
+void esperar_job(JobRegistry *jreg, int job_id) ;
+
 #endif

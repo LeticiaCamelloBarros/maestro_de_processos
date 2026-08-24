@@ -107,3 +107,18 @@ void coletar_todos_jobs(JobRegistry *jreg) {
     }
 }
 
+void esperar_job(JobRegistry *jreg, int job_id) {
+    Job *j = buscar_job(jreg, job_id);
+    if (j == NULL) {
+        fprintf(stderr, "Erro: job %d não encontrado\n", job_id);
+        return;
+    }
+    if (j->state != JOB_RUNNING) {
+        printf("Job [%d] já terminado.\n", job_id);
+        return;
+    }
+    int status;
+    waitpid(j->PID, &status, 0);
+    atualizar_status_job(jreg, j->PID, status);
+    printf("Job [%d] (%s) terminado.\n", j->job_id, j->nome_task);
+}
