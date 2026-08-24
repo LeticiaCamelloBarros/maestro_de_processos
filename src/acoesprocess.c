@@ -1,4 +1,5 @@
 #include <stdio.h>
+#define _POSIX_C_SOURCE 200809L   // necessário para o protótipo de strdup
 #include <stdlib.h>
 //biblioteca para algumas manipulações de arquivos
 #include <fcntl.h> 
@@ -71,12 +72,19 @@ void cmd_run_sequential(char *nomes[], int n) {
         Task *t = buscar_task(&registry, nomes[i]);
         if (t == NULL) {
             fprintf(stderr, "Erro: tarefa '%s' não encontrada\n", nomes[i]);
-            continue;  // não trava, segue pra próxima — exatamente o que a rubrica pede
+            continue;  // não trava, segue pra próxima
         }
-        pid_t pid= executar_task(t, -1, -1, diretorio_atual);
+        pid_t pid = executar_task(t, -1, -1, diretorio_atual);
         if (pid > 0) {
             int status;
             waitpid(pid, &status, 0);
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+                fprintf(stderr, "Aviso: '%s' terminou com código %d\n",
+                        t->nome, WEXITSTATUS(status));
+            } else if (WIFSIGNALED(status)) {
+                fprintf(stderr, "Aviso: '%s' foi morto pelo sinal %d\n",
+                        t->nome, WTERMSIG(status));
+            }
         }
     }
 }
