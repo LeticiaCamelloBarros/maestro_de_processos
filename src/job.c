@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "job.h"
+#include <string.h>
 #include "task.h"
 #define MAX_JOBS 100
 // Cria um novo job na lista, devolve o job_id gerado
