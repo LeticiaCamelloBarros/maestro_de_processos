@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/wait.h>
 #include "job.h"
 #include "task.h"
 #define MAX_JOBS 100
@@ -19,7 +20,7 @@ int cadastrar_job(JobRegistry *jreg, pid_t pid, const char *nome_task) {
     j->PID = pid;
     strncpy(j->nome_task, nome_task, sizeof(j->nome_task) - 1);
     j->nome_task[sizeof(j->nome_task) - 1] = '\0';
-    j->status = JOB_RUNNING;
+    j->state = JOB_RUNNING;
     jreg->num_jobs++;
 
     return j->job_id;  // caminho de sucesso: retorna o id criado — ESSENCIAL, não pode faltar

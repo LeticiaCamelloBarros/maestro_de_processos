@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/wait.h>
 #define MAX_JOBS 100
 //para evitar que inclua o conteúdo do header 2x 
 #ifndef JOB_H

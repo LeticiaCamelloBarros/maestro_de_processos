@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            // processar_comando(meu_argc, meu_argv);
+            processar_comando(meu_argc, meu_argv);
         }
 
         fclose(arquivo);
