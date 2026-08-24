@@ -251,4 +251,58 @@ void cmd_run_parallel(char *nomes_tasks[], int n, TaskRegistry *reg) {
         }
     }
 }
+ void cmd_input(TaskRegistry *reg, char *nome_task, char *arquivo) {
+    Task *t = buscar_task(reg, nome_task);
+    if (t == NULL) {
+        fprintf(stderr, "Erro: tarefa '%s' não encontrada\n", nome_task);
+        return;
+    }
+    t->input_file = strdup(arquivo);
+}
+ 
+void cmd_output(TaskRegistry *reg, char *nome_task, char *arquivo) {
+    Task *t = buscar_task(reg, nome_task);
+    if (t == NULL) {
+        fprintf(stderr, "Erro: tarefa '%s' não encontrada\n", nome_task);
+        return;
+    }
+    t->output_file = strdup(arquivo);
+    t->append_mode = 0;
+}
+ 
+void cmd_append(TaskRegistry *reg, char *nome_task, char *arquivo) {
+    Task *t = buscar_task(reg, nome_task);
+    if (t == NULL) {
+        fprintf(stderr, "Erro: tarefa '%s' não encontrada\n", nome_task);
+        return;
+    }
+    t->output_file = strdup(arquivo);
+    t->append_mode = 1;
+}
+
+void cmd_workdir(char *dir) {
+    struct stat st;
+    if (stat(dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
+        fprintf(stderr, "Erro: diretório '%s' não encontrado\n", dir);
+        return;
+    }
+    strncpy(diretorio_atual, dir, 255);
+    diretorio_atual[255] = '\0';
+}
+ 
+void cmd_start(TaskRegistry *reg, JobRegistry *jreg, char *nome_task) {
+    Task *t = buscar_task(reg, nome_task);
+    if (t == NULL) {
+        fprintf(stderr, "Erro: tarefa '%s' não encontrada\n", nome_task);
+        return;
+    }
+    pid_t pid = executar_task(t, -1, -1, diretorio_atual);
+    if (pid <= 0) {
+        return;  // executar_task já imprimiu o erro
+    }
+    int job_id = cadastrar_job(jreg, pid, nome_task);
+    if (job_id > 0) {
+        printf("[%d] %d\n", job_id, pid);
+    }
+}
  
