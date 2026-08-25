@@ -27,6 +27,11 @@ Dentro da pasta `src/`:
 ```bash
 make
 ```
+ou 
+```bash
+   gcc -Wall -Wextra -std=c11 -g -o processflow main.c task.c job.c acoesprocess.c
+
+```
 
 Isso gera o executável `processflow` na própria pasta `src/`, a partir de `main.c`, `task.c`, `job.c` e `acoesprocess.c`.
 
