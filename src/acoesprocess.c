@@ -1,23 +1,39 @@
-#include <stdio.h>
 #define _POSIX_C_SOURCE 200809L   // necessário para o protótipo de strdup
+#include <stdio.h>
 #include <stdlib.h>
-//biblioteca para algumas manipulações de arquivos
-#include <fcntl.h> 
-//biblioteca para perror e erno 
-#include <errno.h>
+#include <fcntl.h>      // open, O_RDONLY, O_WRONLY, O_CREAT, O_APPEND, O_TRUNC
+#include <errno.h>      // perror, errno
 #include <sys/wait.h>
+#include <sys/stat.h>   // stat (usado em workdir)
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
-#include "task.h"
 #include "acoesprocess.h"
+#include "job.h"
 #define MAX_PARALLEL 32
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdio.h>
+#define MAX_PIPE 32
 
+// ---------------------------------------------------------------------
+// Tokenização
+// ---------------------------------------------------------------------
+int tokenizar(char *linha, char *argv[]) {
+    int argc = 0;
+    char *token = strtok(linha, DELIM);
+
+    while (token != NULL && argc < MAX_ARGS - 1) {
+        argv[argc++] = token;
+        token = strtok(NULL, DELIM);
+    }
+
+    argv[argc] = NULL;  // execvp e afins esperam terminação em NULL
+    return argc;
+}
+
+// ---------------------------------------------------------------------
+// Redirecionamento (usado no modo parallel, onde não passamos por
+// executar_task diretamente)
+// ---------------------------------------------------------------------
 void aplicar_redirecionamentos(Task *t) {
-    // --- ENTRADA (input) ---
     if (t->input_file != NULL) {
         int fd_in = open(t->input_file, O_RDONLY);
         if (fd_in < 0) {
@@ -30,10 +46,9 @@ void aplicar_redirecionamentos(Task *t) {
             close(fd_in);
             _exit(1);
         }
-        close(fd_in);  // já foi duplicado, o original pode fechar
+        close(fd_in);
     }
 
-    // --- SAÍDA (output ou append) ---
     if (t->output_file != NULL) {
         int flags = O_WRONLY | O_CREAT;
         flags |= t->append_mode ? O_APPEND : O_TRUNC;
@@ -52,21 +67,10 @@ void aplicar_redirecionamentos(Task *t) {
         close(fd_out);
     }
 }
-int tokenizar(char *linha, char *argv[]) {
-    int argc = 0;
-    char *token = strtok(linha, DELIM);
 
-    while (token != NULL && argc < MAX_ARGS - 1) {
-        argv[argc++] = token;
-        token = strtok(NULL, DELIM);
-    }
-
-    argv[argc] = NULL;  // execvp e afins esperam terminação em NULL
-    return argc;         // ESSENCIAL: sem isso, quem chama recebe lixo
-}
-void processar_linha(char *linha){
-
-}
+// ---------------------------------------------------------------------
+// run sequential
+// ---------------------------------------------------------------------
 void cmd_run_sequential(char *nomes[], int n) {
     for (int i = 0; i < n; i++) {
         Task *t = buscar_task(&registry, nomes[i]);
@@ -88,26 +92,30 @@ void cmd_run_sequential(char *nomes[], int n) {
         }
     }
 }
+
+// ---------------------------------------------------------------------
+// run parallel
+// ---------------------------------------------------------------------
 void cmd_run_parallel(char *nomes_tasks[], int n, TaskRegistry *reg) {
     ProcessoLancado lancados[MAX_PARALLEL];
     int total_lancados = 0;
- 
-   //lança TODOS os processos primeiro, sem esperar nenhum
+
+    // FASE 1: lança TODOS os processos primeiro, sem esperar nenhum
     for (int i = 0; i < n; i++) {
         Task *t = buscar_task(reg, nomes_tasks[i]);
- 
+
         if (t == NULL) {
             fprintf(stderr, "Erro: tarefa '%s' não existe\n", nomes_tasks[i]);
             continue;  // pula essa, mas NÃO aborta as outras
         }
- 
+
         pid_t pid = fork();
- 
+
         if (pid < 0) {
             perror("fork");
             continue;
         }
- 
+
         if (pid == 0) {
             // processo filho
             if (chdir(diretorio_atual) != 0) {
@@ -120,7 +128,7 @@ void cmd_run_parallel(char *nomes_tasks[], int n, TaskRegistry *reg) {
                     t->programa, strerror(errno));
             _exit(127);
         }
- 
+
         // processo pai: guarda o pid, NÃO espera ainda
         lancados[total_lancados].pid = pid;
         strncpy(lancados[total_lancados].nome_task, t->nome, 63);
@@ -128,8 +136,8 @@ void cmd_run_parallel(char *nomes_tasks[], int n, TaskRegistry *reg) {
         lancados[total_lancados].valido = 1;
         total_lancados++;
     }
- 
-    // só agora espera todos, um por um
+
+    // FASE 2: só agora espera todos, um por um
     for (int i = 0; i < total_lancados; i++) {
         int status;
         waitpid(lancados[i].pid, &status, 0);
@@ -142,6 +150,10 @@ void cmd_run_parallel(char *nomes_tasks[], int n, TaskRegistry *reg) {
         }
     }
 }
+
+// ---------------------------------------------------------------------
+// run pipe  (ex: run pipe listar ordenar contar)
+// ---------------------------------------------------------------------
 void cmd_run_pipe(char *nomes[], int n, TaskRegistry *reg) {
     if (n < 2) {
         fprintf(stderr, "Erro: pipe requer pelo menos 2 tarefas\n");
@@ -151,7 +163,7 @@ void cmd_run_pipe(char *nomes[], int n, TaskRegistry *reg) {
         fprintf(stderr, "Erro: pipe com muitas tarefas (máximo %d)\n", MAX_PIPE + 1);
         return;
     }
- 
+
     int pipes[MAX_PIPE][2];
     for (int i = 0; i < n - 1; i++) {
         if (pipe(pipes[i]) < 0) {
@@ -161,9 +173,9 @@ void cmd_run_pipe(char *nomes[], int n, TaskRegistry *reg) {
             return;
         }
     }
- 
+
     pid_t pids[MAX_PIPE + 1];
- 
+
     for (int i = 0; i < n; i++) {
         Task *t = buscar_task(reg, nomes[i]);
         if (t == NULL) {
@@ -171,21 +183,21 @@ void cmd_run_pipe(char *nomes[], int n, TaskRegistry *reg) {
             pids[i] = -1;
             continue;
         }
- 
+
         pid_t pid = fork();
         if (pid < 0) {
             perror("fork");
             pids[i] = -1;
             continue;
         }
- 
+
         if (pid == 0) {
             // ---- processo filho ----
             if (chdir(diretorio_atual) != 0) {
                 fprintf(stderr, "Erro: diretório '%s' não encontrado\n", diretorio_atual);
                 _exit(1);
             }
- 
+
             // entrada: vem do pipe anterior, ou do input_file da própria task (se for a 1ª)
             if (i > 0) {
                 dup2(pipes[i - 1][0], STDIN_FILENO);
@@ -199,7 +211,7 @@ void cmd_run_pipe(char *nomes[], int n, TaskRegistry *reg) {
                 dup2(fd_in, STDIN_FILENO);
                 close(fd_in);
             }
- 
+
             // saída: vai pro próximo pipe, ou pro output_file da própria task (se for a última)
             if (i < n - 1) {
                 dup2(pipes[i][1], STDOUT_FILENO);
@@ -214,28 +226,28 @@ void cmd_run_pipe(char *nomes[], int n, TaskRegistry *reg) {
                 dup2(fd_out, STDOUT_FILENO);
                 close(fd_out);
             }
- 
+
             // fecha TODOS os fds de pipe no filho (já duplicados no que precisava)
             for (int j = 0; j < n - 1; j++) {
                 close(pipes[j][0]);
                 close(pipes[j][1]);
             }
- 
+
             execvp(t->programa, t->argv);
             fprintf(stderr, "Erro: não foi possível executar '%s': %s\n",
                     t->programa, strerror(errno));
             _exit(127);
         }
- 
+
         pids[i] = pid;
     }
- 
+
     // ---- processo pai: fecha todos os fds de pipe ----
     for (int i = 0; i < n - 1; i++) {
         close(pipes[i][0]);
         close(pipes[i][1]);
     }
- 
+
     // espera todo mundo
     for (int i = 0; i < n; i++) {
         if (pids[i] > 0) {
@@ -251,6 +263,10 @@ void cmd_run_pipe(char *nomes[], int n, TaskRegistry *reg) {
         }
     }
 }
+
+// ---------------------------------------------------------------------
+// input / output / append
+// ---------------------------------------------------------------------
 void cmd_input(TaskRegistry *reg, char *nome_task, char *arquivo) {
     Task *t = buscar_task(reg, nome_task);
     if (t == NULL) {
@@ -259,6 +275,7 @@ void cmd_input(TaskRegistry *reg, char *nome_task, char *arquivo) {
     }
     t->input_file = strdup(arquivo);
 }
+
 void cmd_output(TaskRegistry *reg, char *nome_task, char *arquivo) {
     Task *t = buscar_task(reg, nome_task);
     if (t == NULL) {
@@ -268,6 +285,7 @@ void cmd_output(TaskRegistry *reg, char *nome_task, char *arquivo) {
     t->output_file = strdup(arquivo);
     t->append_mode = 0;
 }
+
 void cmd_append(TaskRegistry *reg, char *nome_task, char *arquivo) {
     Task *t = buscar_task(reg, nome_task);
     if (t == NULL) {
@@ -277,6 +295,10 @@ void cmd_append(TaskRegistry *reg, char *nome_task, char *arquivo) {
     t->output_file = strdup(arquivo);
     t->append_mode = 1;
 }
+
+// ---------------------------------------------------------------------
+// workdir
+// ---------------------------------------------------------------------
 void cmd_workdir(char *dir) {
     struct stat st;
     if (stat(dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
@@ -286,6 +308,10 @@ void cmd_workdir(char *dir) {
     strncpy(diretorio_atual, dir, 255);
     diretorio_atual[255] = '\0';
 }
+
+// ---------------------------------------------------------------------
+// start (background)
+// ---------------------------------------------------------------------
 void cmd_start(TaskRegistry *reg, JobRegistry *jreg, char *nome_task) {
     Task *t = buscar_task(reg, nome_task);
     if (t == NULL) {
@@ -301,15 +327,20 @@ void cmd_start(TaskRegistry *reg, JobRegistry *jreg, char *nome_task) {
         printf("[%d] %d\n", job_id, pid);
     }
 }
+
+// ---------------------------------------------------------------------
+// Dispatcher — interpreta o comando digitado/lido e chama a função certa
+// retorna 1 se o comando for 'exit'
+// ---------------------------------------------------------------------
 int processar_comando(int argc, char *argv[], TaskRegistry *reg, JobRegistry *jreg) {
     if (argc == 0) {
         return 0;  // linha vazia, já filtrada antes de chegar aqui, mas por segurança
     }
- 
+
     if (strcmp(argv[0], "exit") == 0) {
         return 1;
     }
- 
+
     if (strcmp(argv[0], "task") == 0) {
         cadastrar_task(argv, argc, reg);
     }
@@ -320,7 +351,7 @@ int processar_comando(int argc, char *argv[], TaskRegistry *reg, JobRegistry *jr
         }
         char **nomes = &argv[2];
         int n = argc - 2;
- 
+
         if (strcmp(argv[1], "sequential") == 0) {
             cmd_run_sequential(nomes, n);
         } else if (strcmp(argv[1], "parallel") == 0) {
@@ -362,7 +393,6 @@ int processar_comando(int argc, char *argv[], TaskRegistry *reg, JobRegistry *jr
     else {
         fprintf(stderr, "Erro: comando '%s' não reconhecido\n", argv[0]);
     }
- 
+
     return 0;
 }
-

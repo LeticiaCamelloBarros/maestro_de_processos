@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 200809L
+#define _POSIX_C_SOURCE 200809L //só funciona se for posto antes de qualquer include
 #define MAX_TASKS 100
 #include <stdio.h>
 #include <stdlib.h>

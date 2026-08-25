@@ -7,7 +7,9 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "job.h"
 #include "acoesprocess.h"
+
 // variáveis globais — só DECLARAÇÕES aqui, sem instruções soltas
 TaskRegistry registry = {0};
 JobRegistry jobs = { .num_jobs = 0, .next_job_id = 1 };  // já inicializa next_job_id = 1
@@ -59,6 +61,7 @@ int main(int argc, char *argv[]) {
             if (linha[strlen(linha) - 1] != '\n') {
                 printf("\n");  // garante quebra de linha se o arquivo não terminar com \n
             }
+
             char linha_copia[1024];
             strncpy(linha_copia, linha, sizeof(linha_copia) - 1);
             linha_copia[sizeof(linha_copia) - 1] = '\0';
