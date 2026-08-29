@@ -2,16 +2,7 @@
 #include <omp.h>
 #include <calculo.h>
 //pthread_t indentificador de uma thread - especifico da biblioteca pthread 
-*
- * mandelbrot_openmp_funcoes.c
- *
- * Quatro funções baseadas na Seção 4.5 (Implicit Threading / OpenMP)
- * do livro "Operating System Concepts" (Silberschatz, Galvin, Gagne),
- * aplicadas ao cálculo do conjunto de Mandelbrot.
- *
- * Compilar com: gcc -Wall -Wextra -O3 -fopenmp -c mandelbrot_openmp_funcoes.c
- */
- 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
